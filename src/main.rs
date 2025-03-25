@@ -1,33 +1,53 @@
-mod epoll;
-use epoll::Epoll;
+mod connect;
+mod handle;
+mod config;
+
+use crate::connect::epoll;
+use config::config::*;
+use crate::handle::handler;
+// use connect::epoll;
+// use config::config_output;
+
 use std::{
     os::fd::AsRawFd,
     collections::HashMap,
-    // thread,
-    fs,
-    io::prelude::*,
-    net::{TcpListener, TcpStream},
-    // time::Duration,
+    net::TcpListener,
 };
 
+
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let config_path = format!("{}/src/config/config.txt", *PATH_SERVER);
+    let configs = config_output(config_path.as_str());
+    let mut listeners = Vec::new(); 
+
+    for (ip , port ,domain_name) in configs {
+        let addr = format!("{}:{}", ip, port);
+        
+        // println!("adresse {:?}", addr);
+        match TcpListener::bind(&addr) {
+            Ok(listener) => {
+                if domain_name.is_empty() {
+                    println!("Domain name empty listening on http://{}", addr);
+                } else {
+                    println!("Listening on http://{} for the domain http://{}", addr, domain_name);
+                }
+                listeners.push(listener);
+            }
+            Err(e) => {
+                eprintln!("Error binding to address {}: {}", port, e);
+            }
+        }
+        println!("listeners {:?}", listeners);
+    }
+    let listener = &listeners[0];
     listener.set_nonblocking(true).unwrap(); // Set non-blocking mode
 
-    let epoll = Epoll::new();
+    let epoll = epoll::Epoll::new();
     epoll.add_fd(listener.as_raw_fd());
+
     let mut clients = HashMap::new();
 
     loop {
-        // for fd in epoll.wait(10) {
-        //     if fd == listener.as_raw_fd() {
-        //         let (stream, _) = listener.accept().unwrap();
-        //         stream.set_nonblocking(true).unwrap();
-        //         epoll.add_fd(stream.as_raw_fd());
-        //     } else {
-        //         handle_client(fd);
-        //     }
-        // }
         for fd in epoll.wait(10) {
             if fd == listener.as_raw_fd() {
                 // Accept new client connections
@@ -38,58 +58,8 @@ fn main() {
                     clients.insert(fd, stream);
                 }
             } else if let Some(stream) = clients.get_mut(&fd) {
-                handle_connection(stream);
+                handler::handle_connection(stream);
             }
         }
     }
 }
-
-fn handle_connection(stream: &mut TcpStream) {
-    println!("{:?}", stream);
-    let mut buffer = [0; 1024];
-    
-    // Read request (non-blocking)
-    match stream.read(&mut buffer) {
-        Ok(0) => return, // Connection closed by client
-        Ok(_) => {
-            let request = String::from_utf8_lossy(&buffer);
-            let request_line = request.lines().next().unwrap_or("");
-
-            let (status_line, filename) = match request_line {
-                "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
-                _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
-            };
-
-            let contents = fs::read_to_string(filename).unwrap_or_else(|_| "404 Not Found".to_string());
-            let length = contents.len();
-
-            let response = format!(
-                "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
-            );
-
-            // Write response (non-blocking)
-            let _ = stream.write_all(response.as_bytes());
-        }
-        Err(_) => return, // Ignore non-blocking read errors
-    }
-}
-
-/*
-fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&stream);
-    let request_line = buf_reader.lines().next().unwrap().unwrap();
-
-    let (status_line, filename) = match &request_line[..] {
-        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
-        _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
-    };
-    let contents = fs::read_to_string(filename).unwrap();
-    let length = contents.len();
-
-    let response = format!(
-        "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
-    );
-
-    stream.write_all(response.as_bytes()).unwrap();
-}
-*/
