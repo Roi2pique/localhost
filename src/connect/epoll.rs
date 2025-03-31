@@ -1,7 +1,15 @@
 use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD};
-use std::os::unix::io::RawFd;
-use std::process::Command;
-
+use crate::handle::handler;
+use std::{
+    thread,
+    process::Command,
+    collections::HashMap,
+    net::TcpListener,
+    os::{
+        unix::io::RawFd,
+        fd::AsRawFd,
+    },
+};
 #[derive(Debug)]
 pub struct Epoll {
     epoll_fd: RawFd,
@@ -57,5 +65,39 @@ pub fn path_server() -> String {
     } else {
         eprintln!("This OS is not supported");
         String::new()
+    }
+}
+
+
+// modify to accept the multiple possiblities of listeners
+pub fn run_epoll(listerners : Vec<TcpListener>) {
+    let mut handler = Vec::new();
+    for listener in listerners {
+        let handle = thread::spawn(move ||{
+            listener.set_nonblocking(true).unwrap();
+
+            let epoll = Epoll::new();
+            epoll.add_fd(listener.as_raw_fd());
+            let mut clients = HashMap::new();
+
+            loop {
+                for fd in epoll.wait(10) {
+                    if fd == listener.as_raw_fd() {
+                        if let Ok((stream, _)) = listener.accept() {
+                            let fd = stream.as_raw_fd();
+                            stream.set_nonblocking(true).unwrap();
+                            epoll.add_fd(fd);
+                            clients.insert(fd, stream);
+                        }
+                    } else if let Some(stream) = clients.get_mut(&fd) {
+                        handler::handle_connection(stream);
+                    }
+                }
+            }
+        });
+        handler.push(handle);
+    }
+    for handle in handler {
+        handle.join().unwrap();
     }
 }

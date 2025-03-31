@@ -46,7 +46,6 @@ pub fn config_output(path : &str) -> Vec<(String ,u16 ,String)> {
                 
                 if let Ok(port) = port.parse::<u16>() {
                     output.push((ip.to_string(), port, domain_name.to_string()));
-                    println!("{}", port);
                 } else {
                     eprintln!("Error parsing port number {}", port);
                 }
