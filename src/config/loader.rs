@@ -1,5 +1,4 @@
-use crate::epoll::path_server;
-
+use crate::server::epoll::path_server;
 use lazy_static::lazy_static;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -12,6 +11,8 @@ lazy_static! {
 // 127.0.0.1:7878
 // 127.0.0.1:7879 host.name
 // 127.0.0.1 : 7878
+
+// Reads and parses the config file
 
 pub fn config_output(path : &str) -> Vec<(String ,u16 ,String)> {
     let mut output = Vec::new();

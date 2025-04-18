@@ -1,5 +1,5 @@
 use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD};
-use crate::handle::handler;
+use crate::server::connection;
 use std::{
     thread,
     process::Command,
@@ -90,7 +90,7 @@ pub fn run_epoll(listerners : Vec<TcpListener>) {
                             clients.insert(fd, stream);
                         }
                     } else if let Some(stream) = clients.get_mut(&fd) {
-                        handler::handle_connection(stream);
+                        connection::handle_connection(stream);
                     }
                 }
             }
