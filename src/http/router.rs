@@ -1,9 +1,12 @@
+use crate::errors::handler::error_response;
 use crate::http::methods::*;
 use std::net::TcpStream;
-use crate::errors::handler::error_response;
 
 pub fn handle_method(
-    method: &str, path: &str, _domain: Option<&str>, stream: &mut TcpStream,
+    method: &str,
+    path: &str,
+    _domain: Option<&str>,
+    stream: &mut TcpStream,
 ) -> Result<(), String> {
     match method {
         "GET" => {
@@ -20,8 +23,7 @@ pub fn handle_method(
         }
         _ => {
             error_response(405, stream);
-           Ok(())
+            Ok(())
         }
     }
 }
-
