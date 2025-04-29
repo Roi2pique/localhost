@@ -1,14 +1,11 @@
-use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD};
 use crate::server::connection;
+use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD};
 use std::{
-    thread,
-    process::Command,
     collections::HashMap,
     net::TcpListener,
-    os::{
-        unix::io::RawFd,
-        fd::AsRawFd,
-    },
+    os::{fd::AsRawFd, unix::io::RawFd},
+    process::Command,
+    thread,
 };
 #[derive(Debug)]
 pub struct Epoll {
@@ -34,10 +31,15 @@ impl Epoll {
 
     pub fn wait(&self, max_events: usize) -> Vec<RawFd> {
         let mut events = vec![libc::epoll_event { events: 0, u64: 0 }; max_events];
-        let num_events = unsafe { epoll_wait(self.epoll_fd, events.as_mut_ptr(), max_events as i32, -1) };
+        let num_events =
+            unsafe { epoll_wait(self.epoll_fd, events.as_mut_ptr(), max_events as i32, -1) };
         assert!(num_events >= 0);
 
-        events.into_iter().take(num_events as usize).map(|e| e.u64 as RawFd).collect()
+        events
+            .into_iter()
+            .take(num_events as usize)
+            .map(|e| e.u64 as RawFd)
+            .collect()
     }
 }
 
@@ -56,7 +58,8 @@ pub fn path_server() -> String {
                 } else {
                     eprintln!("Error when searching for path");
                     String::new()
-                }},
+                }
+            }
             Err(_) => {
                 eprintln!("Error when executing command for path");
                 String::new()
@@ -68,12 +71,11 @@ pub fn path_server() -> String {
     }
 }
 
-
 // modify to accept the multiple possiblities of listeners
-pub fn run_epoll(listerners : Vec<TcpListener>) {
+pub fn run_epoll(listerners: Vec<TcpListener>) {
     let mut handler = Vec::new();
     for listener in listerners {
-        let handle = thread::spawn(move ||{
+        let handle = thread::spawn(move || {
             listener.set_nonblocking(true).unwrap();
 
             let epoll = Epoll::new();
@@ -89,8 +91,14 @@ pub fn run_epoll(listerners : Vec<TcpListener>) {
                             epoll.add_fd(fd);
                             clients.insert(fd, stream);
                         }
-                    } else if let Some(stream) = clients.get_mut(&fd) {
+                    // OLD
+                    // } else if let Some(stream) = clients.get_mut(&fd) {
+                    //     connection::handle_connection(stream);
+                    // }
+                    } else if let Some(stream) = clients.remove(&fd) {
                         connection::handle_connection(stream);
+                        // Maybe reinsert the stream if needed after handling
+                        // clients.insert(fd, stream);
                     }
                 }
             }

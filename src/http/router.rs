@@ -2,28 +2,13 @@ use crate::errors::handler::error_response;
 use crate::http::methods::*;
 use std::net::TcpStream;
 
-pub fn handle_method(
-    method: &str,
-    path: &str,
-    _domain: Option<&str>,
-    stream: &mut TcpStream,
-) -> Result<(), String> {
+pub fn route_request(method: &str, path: &str, stream: &mut TcpStream) {
     match method {
-        "GET" => {
-            get::handle_get(path, stream); // Add domain if needed
-            Ok(())
-        }
-        "POST" => {
-            post::handle_post(path, stream);
-            Ok(())
-        }
-        "DELETE" => {
-            delete::handle_delete(path, stream);
-            Ok(())
-        }
+        "GET" => get::handle_get(path, stream),
+        "POST" => post::handle_post(path, stream),
+        "DELETE" => delete::handle_delete(path, stream),
         _ => {
             error_response(405, stream);
-            Ok(())
         }
     }
 }
