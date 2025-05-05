@@ -2,7 +2,7 @@
 use std::net::TcpStream;
 
 use crate::errors::handler::error_response;
-use crate::http::{request, response, router};
+use crate::http::{request, router};
 
 // handle connection
 pub fn handle_connection(mut stream: TcpStream) {
@@ -50,10 +50,10 @@ pub fn handle_connection(mut stream: TcpStream) {
     // }
 }
 
-use std::fs;
-pub fn serve_file(path: &str, _stream: &mut TcpStream) -> String {
-    match fs::read_to_string(path) {
-        Ok(content) => response::create_response("200 OK", &content),
-        Err(e) => response::create_response("404 Not Found", e.to_string().as_str()),
-    }
-}
+// use std::fs;
+// pub fn serve_file(path: &str, _stream: &mut TcpStream) -> String {
+//     match fs::read_to_string(path) {
+//         Ok(content) => response::create_response("200 OK", &content),
+//         Err(e) => response::create_response("404 Not Found", e.to_string().as_str()),
+//     }
+// }
