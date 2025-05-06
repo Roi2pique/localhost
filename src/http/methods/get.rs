@@ -2,6 +2,7 @@ use crate::errors::handler::error_response;
 use crate::http::response::create_response;
 use std::path::Path;
 use std::{fs, io::Write, net::TcpStream};
+
 // Handle GET request
 pub fn handle_get(path: &str, stream: &mut TcpStream) {
     // For example, you can read a file and send its content as a response
@@ -9,22 +10,17 @@ pub fn handle_get(path: &str, stream: &mut TcpStream) {
     let new_path = Path::new(&sanitize);
     if new_path.is_dir() {
         let default = new_path.join("index.html");
-        // println!("default: {:?}", default);
+
         if default.exists() {
             send_file(default, stream);
         } else {
-            // println!("maybe");
             error_response(404, stream);
         }
     } else if new_path.exists() {
         send_file(new_path.to_path_buf(), stream);
     } else {
-        println!("or there");
         error_response(404, stream);
     }
-
-    // let response = serve_file("ressources/index.html", stream);
-    // stream.write_all(response.as_bytes()).unwrap();
 }
 
 fn sanitize_path(path: &str) -> String {
