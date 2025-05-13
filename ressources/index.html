@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <title>Rust HTTP Server</title>
     <style>
         body {
@@ -30,23 +31,23 @@
         <button type="submit">Upload</button>
     </form>
 
-    <h2>🗑️ Delete a File</h2>
+    <!-- <h2>🗑️ Delete a File</h2>
     <form
         onsubmit="event.preventDefault(); fetch('/uploads/file.txt', { method: 'DELETE' }).then(() => alert('Deleted')); ">
         <input type="text" name="filename" placeholder="e.g. file.txt" />
         <button type="submit">Delete</button>
-    </form>
+    </form> -->
 
     <h2>📂 Browse Uploaded Files</h2>
     <ul>
-        <li><a href="/uploads/file1.txt">file1.txt</a></li>
-        <li><a href="/uploads/photo.jpg">photo.jpg</a></li>
+        <li><a href="/upload/file1.txt">file1.txt</a></li>
+        <li><a href="/upload/photo.png">photo.jpg</a></li>
         <!-- You can auto-generate this list later in Rust -->
     </ul>
 
     <footer style="margin-top: 3rem;">
         <hr>
-        <p>Rust server powered by <strong>you</strong> 💪🦀</p>
+        <p>Rust server !</p>
     </footer>
 </body>
 
