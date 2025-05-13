@@ -1,30 +1,35 @@
 use crate::errors::handler::error_response;
 use crate::http::response::create_response;
+use crate::http::utils::sanitize_path;
 use std::path::Path;
 use std::{fs, io::Write, net::TcpStream};
 
 // Handle GET request
 pub fn handle_get(path: &str, stream: &mut TcpStream) {
-    // For example, you can read a file and send its content as a response
-    let sanitize = format!("./ressources/{}", sanitize_path(path));
-    let new_path = Path::new(&sanitize);
-    if new_path.is_dir() {
-        let default = new_path.join("index.html");
+    let base_dir = Path::new("./ressources");
+    // println!("fs_path: {:?}", sanitize_path(path, base_dir));
+    // .png files get none....
+    let fs_path = match sanitize_path(path, base_dir) {
+        Some(p) => p,
+        None => {
+            error_response(403, stream);
+            return;
+        }
+    };
+
+    if fs_path.is_dir() {
+        let default = fs_path.join("index.html");
 
         if default.exists() {
             send_file(default, stream);
         } else {
             error_response(404, stream);
         }
-    } else if new_path.exists() {
-        send_file(new_path.to_path_buf(), stream);
+    } else if fs_path.exists() {
+        send_file(fs_path.to_path_buf(), stream);
     } else {
         error_response(404, stream);
     }
-}
-
-fn sanitize_path(path: &str) -> String {
-    path.replace("..", "")
 }
 
 fn send_file(path: std::path::PathBuf, stream: &mut TcpStream) {
@@ -45,6 +50,9 @@ fn send_file(path: std::path::PathBuf, stream: &mut TcpStream) {
             let _ = stream.write_all(response.headers.as_bytes());
             let _ = stream.write_all(&response.body);
         }
-        Err(_) => error_response(403, stream),
+        Err(_) => {
+            println!("error : sendfile");
+            error_response(403, stream);
+        }
     }
 }

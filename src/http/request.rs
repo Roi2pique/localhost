@@ -61,7 +61,7 @@ pub fn parse_request(stream: &mut TcpStream) -> Option<HttpRequest> {
     let mut line = String::new();
 
     while reader.read_line(&mut line).is_ok() {
-        let trimmed = line.trim_end(); // ✅ Don't overwrite the original String
+        let trimmed = line.trim_end(); // Don't overwrite the original String
         if trimmed.is_empty() {
             break;
         }
@@ -69,7 +69,7 @@ pub fn parse_request(stream: &mut TcpStream) -> Option<HttpRequest> {
             headers.insert(key.to_string(), value.to_string());
         }
 
-        line.clear(); // ✅ Works because `line` is still the mutable String
+        line.clear(); // Works because `line` is still the mutable String
     }
 
     let mut body = None;
