@@ -1,6 +1,6 @@
 use crate::errors::handler::error_response;
 use crate::http::response::create_response;
-use crate::http::utils::sanitize_path;
+use crate::http::utils;
 use std::path::Path;
 use std::{fs, io::Write, net::TcpStream};
 
@@ -8,14 +8,29 @@ use std::{fs, io::Write, net::TcpStream};
 pub fn handle_get(path: &str, stream: &mut TcpStream) {
     let base_dir = Path::new("./ressources");
     // println!("fs_path: {:?}", sanitize_path(path, base_dir));
-    // .png files get none....
-    let fs_path = match sanitize_path(path, base_dir) {
+    let fs_path = match utils::sanitize_path(path, base_dir) {
         Some(p) => p,
         None => {
             error_response(403, stream);
             return;
         }
     };
+
+    if path == "/" {
+        let index_path = base_dir.join("index.html");
+        let upload_dir = base_dir.join("upload");
+
+        match utils::render_home_with_file_list(&index_path, &upload_dir, "/upload") {
+            Some(content) => {
+                let response = create_response("200 OK", content.into_bytes(), "text/html", None);
+                let _ = stream.write_all(response.headers.as_bytes());
+                let _ = stream.write_all(&response.body);
+            }
+            None => {
+                error_response(500, stream); // couldn't read or build template
+            }
+        }
+    }
 
     if fs_path.is_dir() {
         let default = fs_path.join("index.html");
