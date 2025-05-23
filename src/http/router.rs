@@ -2,12 +2,16 @@ use crate::errors::handler::error_response;
 use crate::http::methods::*;
 use std::net::TcpStream;
 
-pub fn route_request(method: &str, path: &str, stream: &mut TcpStream) {
-    println!("method: {}", method);
-    match method {
-        "GET" => get::handle_get(path, stream),
-        "POST" => post::handle_post(path, stream),
-        "DELETE" => delete::handle_delete(path, stream),
+use super::request::HttpRequest;
+
+pub const RESOURCES_DIR: &str = "./ressources";
+pub const UPLOAD_DIR: &str = "uploads";
+
+pub fn route_request(request: HttpRequest, stream: &mut TcpStream) {
+    match request.method.as_str() {
+        "GET" => get::handle_get(&request.path, stream),
+        "POST" => post::handle_post(&request, stream),
+        "DELETE" => delete::handle_delete(&request.path, stream),
         _ => {
             error_response(405, stream);
         }
