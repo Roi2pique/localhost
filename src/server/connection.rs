@@ -8,7 +8,7 @@ use crate::http::{request, router};
 pub fn handle_connection(mut stream: TcpStream) {
     match request::parse_request(&mut stream) {
         Some(request) => {
-            info!("request: {:#?}", request);
+            // info!("request: {:#?}", request);
 
             println!("method: {} for path: {}", request.method, request.path);
             router::route_request(request, &mut stream);
