@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use super::request::HttpRequest;
 
 pub const RESOURCES_DIR: &str = "./ressources";
-pub const UPLOAD_DIR: &str = "uploads";
+pub const UPLOAD_DIR: &str = "upload";
 
 pub fn route_request(request: HttpRequest, stream: &mut TcpStream) {
     match request.method.as_str() {
