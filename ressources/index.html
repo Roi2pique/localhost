@@ -31,12 +31,17 @@
         <button type="submit">Upload</button>
     </form>
 
-    <!-- <h2>🗑️ Delete a File</h2>
-    <form
-        onsubmit="event.preventDefault(); fetch('/uploads/file.txt', { method: 'DELETE' }).then(() => alert('Deleted')); ">
-        <input type="text" name="filename" placeholder="e.g. file.txt" />
+    <h2>🗑️ Delete a File</h2>
+    <form onsubmit="event.preventDefault(); 
+        const filename = this.filename.value;
+        fetch(`/upload/${filename}`, { method: 'DELETE' })
+            .then(() => alert('Deleted'))
+            .catch(err => alert('Error: ' + err));
+    ">
+        <input type="text" name="filename" placeholder="e.g. file.txt" required />
         <button type="submit">Delete</button>
-    </form> -->
+    </form>
+
 
     <h2>Browse Uploaded Files</h2>
     <!-- ::FILE_LIST:: will be replaced -->

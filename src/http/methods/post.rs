@@ -44,7 +44,7 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
             return;
         }
     };
-    println!("body: {}", body,);
+    println!("body: {:?}", req);
     match parse_multipart_form(body, &boundary) {
         Some((filename, file_bytes)) => {
             create_dir(UPLOAD_DIR, Some(RESOURCES_DIR)); // ensure folder exists
@@ -84,7 +84,6 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
 }
 
 pub fn parse_multipart_form(body: &str, boundary: &str) -> Option<(String, Vec<u8>)> {
-    // Create dynamic boundary marker
     let boundary_marker = format!("--{}", boundary);
 
     // Split body into parts
@@ -92,11 +91,9 @@ pub fn parse_multipart_form(body: &str, boundary: &str) -> Option<(String, Vec<u
 
     for part in parts {
         if part.contains("Content-Disposition") && part.contains("filename=") {
-            // Capture filename
             let filename_re = Regex::new(r#"filename="([^"]+)""#).ok()?;
             let filename = filename_re.captures(part)?.get(1)?.as_str().to_string();
 
-            // Try to find the start of the content (after double newline)
             let split = part.split("\r\n\r\n").collect::<Vec<_>>();
             if split.len() < 2 {
                 continue; // malformed part

@@ -11,7 +11,7 @@ pub fn route_request(request: HttpRequest, stream: &mut TcpStream) {
     match request.method.as_str() {
         "GET" => get::handle_get(&request.path, stream),
         "POST" => post::handle_post(&request, stream),
-        "DELETE" => delete::handle_delete(&request.path, stream),
+        "DELETE" => delete::handle_delete(&request, stream),
         _ => {
             error_response(405, stream);
         }
