@@ -1,3 +1,4 @@
+mod cgi_bin;
 mod config;
 mod errors;
 mod http;
