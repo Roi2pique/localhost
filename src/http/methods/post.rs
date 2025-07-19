@@ -1,11 +1,15 @@
 use log::error;
 use regex::Regex;
-use std::fs::{create_dir_all, File};
-use std::path::Path;
+use std::fs::File;
 use std::{io::Write, net::TcpStream};
 
-use crate::http::router::{RESOURCES_DIR, UPLOAD_DIR};
-use crate::{errors::handler::error_response, http::request::HttpRequest};
+// use crate::::{RESOURCES_DIR, UPLOAD_DIR};
+use crate::{
+    errors::handler::error_response,
+    http::request::HttpRequest,
+    http::router::{RESOURCES_DIR, UPLOAD_DIR},
+    http::utils::create_dir,
+};
 
 // Handle POST request
 pub fn handle_post(req: &HttpRequest, stream: &mut TcpStream) {
@@ -44,21 +48,46 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
             return;
         }
     };
-    println!("body: {:?}", req);
+
+    println!("body: {:?}\n", req);
     match parse_multipart_form(body, &boundary) {
         Some((filename, file_bytes)) => {
-            create_dir(UPLOAD_DIR, Some(RESOURCES_DIR)); // ensure folder exists
+            // Decide where to save
+            let is_script = filename.ends_with(".py")
+                || filename.ends_with(".sh")
+                || filename.ends_with(".cgi");
 
-            let full_dir = format!("{}/{}", RESOURCES_DIR, UPLOAD_DIR);
-            let save_path = format!("{}/{}", full_dir, filename);
-
-            if let Ok(mut file) = File::create(&save_path) {
-                file.write_all(&file_bytes).expect("Failed to write file");
+            let save_dir = if is_script {
+                "src/cgi_bin/scripts"
             } else {
-                error_response(500, stream);
-                error!("Failed to save file at {}", save_path);
-                return;
+                &format!("{}/{}", RESOURCES_DIR, UPLOAD_DIR)
+            };
+
+            // create_dir(save_dir, None); // Make sure the folder exists
+
+            let save_path = format!("{}/{}", save_dir, filename);
+
+            match File::create(&save_path) {
+                Ok(mut file) => {
+                    if let Err(e) = file.write_all(&file_bytes) {
+                        error_response(500, stream);
+                        error!("Failed to write file: {}", e);
+                        return;
+                    }
+                }
+                Err(e) => {
+                    error_response(500, stream);
+                    error!("Failed to create file at {}: {}", save_path, e);
+                    return;
+                }
             }
+            // if let Ok(mut file) = File::create(&save_path) {
+            //     file.write_all(&file_bytes).expect("Failed to write file");
+            // } else {
+            //     error_response(500, stream);
+            //     error!("Failed to save file at {}", save_path);
+            //     return;
+            // }
 
             let html = format!(
                 "<h1>Upload complete</h1><p>Saved as: {}</p>
@@ -115,24 +144,4 @@ fn extract_boundary(header: &str) -> Option<String> {
         .split("boundary=")
         .nth(1)
         .map(|b| b.trim().to_string())
-}
-
-pub fn create_dir(path: &str, parent: Option<&str>) {
-    let full_path = if let Some(parent_dir) = parent {
-        format!("{}/{}", parent_dir, path)
-    } else {
-        path.to_string()
-    };
-
-    let dir_path = Path::new(&full_path);
-
-    if !dir_path.exists() {
-        if let Err(e) = create_dir_all(&full_path) {
-            error!("Failed to create directory {}: {}", full_path, e);
-        } else {
-            println!("Created directory: {}", full_path);
-        }
-    } else {
-        println!("Directory {} already exists", full_path);
-    }
 }

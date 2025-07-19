@@ -1,4 +1,6 @@
+use log::error;
 use std::fs;
+use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 
 pub fn sanitize_path(request_path: &str, base_dir: &Path) -> Option<PathBuf> {
@@ -64,4 +66,24 @@ pub fn render_home_with_two_lists(
         .replace("::SCRIPT_LIST::", &script_list);
 
     Some(filled)
+}
+
+pub fn create_dir(path: &str, parent: Option<&str>) {
+    let full_path = if let Some(parent_dir) = parent {
+        format!("{}/{}", parent_dir, path)
+    } else {
+        path.to_string()
+    };
+
+    let dir_path = Path::new(&full_path);
+
+    if !dir_path.exists() {
+        if let Err(e) = create_dir_all(&full_path) {
+            error!("Failed to create directory {}: {}", full_path, e);
+        } else {
+            println!("Created directory: {}", full_path);
+        }
+    } else {
+        println!("Directory {} already exists", full_path);
+    }
 }
