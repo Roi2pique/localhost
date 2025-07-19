@@ -1,8 +1,18 @@
 use std::collections::HashMap;
+use std::io::Write;
+use std::net::TcpStream;
 
+#[derive(Debug)]
 pub struct HttpResponse {
     pub headers: String,
     pub body: Vec<u8>,
+}
+
+impl HttpResponse {
+    pub fn send(&self, stream: &mut TcpStream) {
+        let _ = stream.write_all(self.headers.as_bytes());
+        let _ = stream.write_all(&self.body);
+    }
 }
 
 // Builds proper HTTP responses
@@ -30,21 +40,3 @@ pub fn create_response(
 
     HttpResponse { headers, body }
 }
-
-// pub fn create_response(status: &str, body: &str) -> String {
-//     format!(
-//         "HTTP/1.1 {}\r\nContent-Length: {}\r\nContent-Type: text/html\r\n\r\n{}",
-//         status,
-//         body.len(),
-//         body
-//     )
-// }
-
-// use std::net::TcpStream;
-// use std::fs;
-// pub fn serve_file(path: &str, _: &mut TcpStream) -> String {
-//     match fs::read_to_string(path) {
-//         Ok(content) => create_response("200 OK", &content),
-//         Err(e) => create_response("404 Not Found", e.to_string().as_str()),
-//     }
-// }

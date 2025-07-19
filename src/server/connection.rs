@@ -1,4 +1,3 @@
-use log::info;
 use std::net::TcpStream;
 
 use crate::errors::handler::error_response;
