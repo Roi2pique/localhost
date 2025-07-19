@@ -2,12 +2,13 @@ use crate::errors::handler::error_response;
 use crate::http::response::create_response;
 use crate::http::utils;
 use std::path::Path;
-use std::{fs, io::Write, net::TcpStream};
+use std::{fs, net::TcpStream};
 
 // Handle GET request
 pub fn handle_get(path: &str, stream: &mut TcpStream) {
     let base_dir = Path::new("./ressources");
-    // println!("fs_path: {:?}", sanitize_path(path, base_dir));
+    let src = Path::new("./src");
+
     let fs_path = match utils::sanitize_path(path, base_dir) {
         Some(p) => p,
         None => {
@@ -16,15 +17,21 @@ pub fn handle_get(path: &str, stream: &mut TcpStream) {
         }
     };
 
-    if path == "/" {
-        let index_path = base_dir.join("index.html");
-        let upload_dir = base_dir.join("upload");
+    let index_path = base_dir.join("index.html");
+    let upload_dir = base_dir.join("upload");
+    let script_dir = src.join("cgi_bin/scripts");
 
-        match utils::render_home_with_file_list(&index_path, &upload_dir, "/upload") {
+    if path == "/" {
+        match utils::render_home_with_two_lists(
+            &index_path,
+            &upload_dir,
+            &script_dir,
+            "/upload",
+            "/scripts",
+        ) {
             Some(content) => {
                 let response = create_response("200 OK", content.into_bytes(), "text/html", None);
-                let _ = stream.write_all(response.headers.as_bytes());
-                let _ = stream.write_all(&response.body);
+                response.send(stream);
             }
             None => {
                 error_response(500, stream); // couldn't read or build template
@@ -61,9 +68,7 @@ fn send_file(path: std::path::PathBuf, stream: &mut TcpStream) {
             };
 
             let response = create_response("200 OK", content, content_type, None);
-
-            let _ = stream.write_all(response.headers.as_bytes());
-            let _ = stream.write_all(&response.body);
+            response.send(stream);
         }
         Err(_) => {
             println!("error : sendfile");

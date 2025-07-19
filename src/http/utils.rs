@@ -29,28 +29,39 @@ pub fn sanitize_path(request_path: &str, base_dir: &Path) -> Option<PathBuf> {
     }
 }
 
-pub fn render_home_with_file_list(
-    index_path: &Path,
-    upload_dir: &Path,
-    web_prefix: &str,
-) -> Option<String> {
-    let template = fs::read_to_string(index_path).ok()?;
-    let mut file_list_html = String::from("<ul>");
+pub fn generate_file_list_html(dir: &Path, web_prefix: &str) -> String {
+    let mut html = String::from("<ul>");
 
-    if let Ok(entries) = fs::read_dir(upload_dir) {
+    // println!("[DEBUG] Adding file: {:?} -> {}", dir, web_prefix);
+    if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let file_name = entry.file_name().to_string_lossy().to_string();
             let file_path = format!("{}/{}", web_prefix.trim_end_matches('/'), file_name);
-            file_list_html.push_str(&format!(
+            html.push_str(&format!(
                 "<li><a href=\"{}\">{}</a></li>",
                 file_path, file_name
             ));
         }
     }
+    println!("[DEBUG] Generated HTML: {}", html);
+    html.push_str("</ul>");
+    html
+}
 
-    file_list_html.push_str("</ul>");
+pub fn render_home_with_two_lists(
+    index_path: &Path,
+    upload_dir: &Path,
+    script_dir: &Path,
+    upload_prefix: &str,
+    script_prefix: &str,
+) -> Option<String> {
+    let template = fs::read_to_string(index_path).ok()?;
+    let upload_list = generate_file_list_html(upload_dir, upload_prefix);
+    let script_list = generate_file_list_html(script_dir, script_prefix);
 
-    // Inject the list into the template
-    let result = template.replace("::FILE_LIST::", &file_list_html);
-    Some(result)
+    let filled = template
+        .replace("::FILE_LIST::", &upload_list)
+        .replace("::SCRIPT_LIST::", &script_list);
+
+    Some(filled)
 }

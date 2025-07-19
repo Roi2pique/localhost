@@ -48,9 +48,8 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
     match parse_multipart_form(body, &boundary) {
         Some((filename, file_bytes)) => {
             create_dir(UPLOAD_DIR, Some(RESOURCES_DIR)); // ensure folder exists
-            let full_dir = format!("{}/{}", RESOURCES_DIR, UPLOAD_DIR);
-            // std::fs::create_dir_all(&full_dir).expect("Failed to create upload dir");
 
+            let full_dir = format!("{}/{}", RESOURCES_DIR, UPLOAD_DIR);
             let save_path = format!("{}/{}", full_dir, filename);
 
             if let Ok(mut file) = File::create(&save_path) {
@@ -71,6 +70,7 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
                 html.len(),
                 html
             );
+            println!("the filename : {:?}", filename);
             let _ = stream.write_all(response.as_bytes());
         }
         None => {
