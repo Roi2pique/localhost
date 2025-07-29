@@ -24,6 +24,10 @@ The main objectives of this server are:
 
 ## 🗂️ Project Structure
 
+ressources/
+├── index.html
+├── upload/
+│ └── upload_files.txt
 src/
 ├── main.rs # Entrypoint: loads config, starts server
 ├── config/ # Parses config.txt (listener and domain setup)
@@ -38,7 +42,7 @@ src/
 
 ## ⚙️ Configuration
 
-Located in: `src/config/config.txt`
+Located in: `etc/config.txt`
 
 Each line defines a listener:
 127.0.1.5:7980
@@ -54,6 +58,12 @@ Each line defines a listener:
 ```bash
 cargo build --release
 cargo run
+```
+
+Or after building:
+
+```bash
+RUST_LOG=info cargo run
 ```
 
 👨‍💻 Author
