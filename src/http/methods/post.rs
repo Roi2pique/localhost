@@ -3,12 +3,10 @@ use regex::Regex;
 use std::fs::File;
 use std::{io::Write, net::TcpStream};
 
-// use crate::::{RESOURCES_DIR, UPLOAD_DIR};
 use crate::{
     errors::handler::error_response,
     http::request::HttpRequest,
     http::router::{RESOURCES_DIR, UPLOAD_DIR},
-    http::utils::create_dir,
 };
 
 // Handle POST request
@@ -63,8 +61,6 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
                 &format!("{}/{}", RESOURCES_DIR, UPLOAD_DIR)
             };
 
-            // create_dir(save_dir, None); // Make sure the folder exists
-
             let save_path = format!("{}/{}", save_dir, filename);
 
             match File::create(&save_path) {
@@ -81,13 +77,6 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
                     return;
                 }
             }
-            // if let Ok(mut file) = File::create(&save_path) {
-            //     file.write_all(&file_bytes).expect("Failed to write file");
-            // } else {
-            //     error_response(500, stream);
-            //     error!("Failed to save file at {}", save_path);
-            //     return;
-            // }
 
             let html = format!(
                 "<h1>Upload complete</h1><p>Saved as: {}</p>

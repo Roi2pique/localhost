@@ -91,10 +91,6 @@ pub fn run_epoll(listerners: Vec<TcpListener>) {
                             epoll.add_fd(fd);
                             clients.insert(fd, stream);
                         }
-                    // OLD
-                    // } else if let Some(stream) = clients.get_mut(&fd) {
-                    //     connection::handle_connection(stream);
-                    // }
                     } else if let Some(stream) = clients.remove(&fd) {
                         connection::handle_connection(stream);
                         // Maybe reinsert the stream if needed after handling

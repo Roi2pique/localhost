@@ -9,7 +9,7 @@ pub const RESOURCES_DIR: &str = "./ressources";
 pub const UPLOAD_DIR: &str = "upload";
 
 pub fn route_request(req: HttpRequest, stream: &mut TcpStream) {
-    if req.path.starts_with("/scripts/") && req.path.ends_with(".cgi") {
+    if req.path.starts_with("/scripts/") {
         handle::handle_cgi(&req, stream);
         return;
     }
