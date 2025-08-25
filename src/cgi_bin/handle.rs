@@ -31,7 +31,7 @@ pub fn handle_cgi(req: &HttpRequest, stream: &mut TcpStream) {
     command.env("PATH_INFO", &req.path);
 
     // Body
-    let body = req.body.as_deref().unwrap_or("");
+    let body = req.text_body.as_deref().unwrap_or("");
     command.env("CONTENT_LENGTH", body.len().to_string());
 
     println!("Executing CGI script: {:#?}", command);

@@ -37,9 +37,10 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
         return;
     }
     let boundary = boundary.unwrap();
-
-    let body = match &req.body {
-        Some(b) => b,
+    println!("HTTPRequest {:#?}\n", req.body);
+    let body_bytes = match req.body_as_text() {
+        // modif for the bytes
+        Some(body) => body,
         None => {
             error_response(400, stream);
             error!("Missing body in request {:#?}", req);
@@ -47,14 +48,13 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
         }
     };
 
-    println!("body: {:?}\n", req);
-    match parse_multipart_form(body, &boundary) {
+    match parse_multipart_form(&body_bytes, &boundary) {
         Some((filename, file_bytes)) => {
-            // Decide where to save
             let is_script = filename.ends_with(".py")
                 || filename.ends_with(".sh")
                 || filename.ends_with(".cgi");
 
+            // Decide where to save
             let save_dir = if is_script {
                 "src/cgi_bin/scripts"
             } else {
@@ -101,6 +101,7 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
     }
 }
 
+// next there is the new version
 pub fn parse_multipart_form(body: &str, boundary: &str) -> Option<(String, Vec<u8>)> {
     let boundary_marker = format!("--{}", boundary);
 

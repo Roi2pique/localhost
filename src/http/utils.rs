@@ -44,7 +44,7 @@ pub fn generate_file_list_html(dir: &Path, web_prefix: &str) -> String {
             ));
         }
     }
-    println!("[DEBUG] Generated HTML: {}", html);
+    // println!("[DEBUG] Generated HTML: {}", html);
     html.push_str("</ul>");
     html
 }
