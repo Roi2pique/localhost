@@ -8,7 +8,9 @@ use std::{fs, io::Write};
 
 pub fn handle_delete(req: &HttpRequest, stream: &mut TcpStream) {
     let base_dir = Path::new("./ressources");
-    let sanitized = match sanitize_path(&req.path, base_dir) {
+    let var = req.path.replace("%20", " ");
+
+    let sanitized = match sanitize_path(&var, base_dir) {
         Some(p) => p,
         None => {
             error_response(403, stream);
@@ -23,7 +25,7 @@ pub fn handle_delete(req: &HttpRequest, stream: &mut TcpStream) {
     println!("Deleting file: {}", sanitized.display());
     match fs::remove_file(sanitized) {
         Ok(_) => {
-            let msg = format!("<h1>File deleted successfully</h1><p>{}</p>", req.path);
+            let msg = format!("<h1>File deleted successfully</h1><p>{}</p>", var);
             let response = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",
                 msg.len(),
@@ -33,7 +35,7 @@ pub fn handle_delete(req: &HttpRequest, stream: &mut TcpStream) {
         }
         Err(e) => {
             error_response(500, stream);
-            error!("Failed to delete file: {}. Error: {}", req.path, e);
+            error!("Failed to delete file: {}. Error: {}", var, e);
             return;
         }
     }
