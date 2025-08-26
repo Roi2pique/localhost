@@ -1,0 +1,33 @@
+Compte rendu backend:
+
+- ajouter un .gitignore (pour ignorer les fichiers de log et la db)
+- mettre les fichiers de logs dans un dossiers log
+- pourquoi avoir un README à la racine du projet et dans le dossier backend ?
+- regrouper les schéma dans dossier doc
+- faire un dossier qui ne contient que ta/tes db et dossier de migration et un autre dossier qui contient les fonctions go qui vont communiquer avec ta/tes db afin de ne pas tous mélanger
+
+- les fonctions de test ne peuvent pas être regroupées dans un unique dossier. (ou en tous cas ce n'est pas la meilleur idées) Une fichier de test porte le même nom que le fichier qu'il test (on ajoute juste _test avant le .go au nom du fichier (ex: un fichier migrate.go et avec un fichier migrate_test.go))
+- ta db mock.db ne sert à rien (une db mock est une db fictive présente dans la mémoire d'un pc/serveur et qui va être utilisé que pour faire des tests)
+- les fonctions présentes dans ton dossiers files devrait plutôt être dans ton dossier utils.
+
+
+lorsque tu appelle une fonction et que tu n'utilise que l'erreur qui est renvoyer tu peux faire 
+```
+	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil { ... }
+```
+
+start.go:      l26 - l27 => fusionne les lignes avec un ":="
+fileexists.go: l11       => tu vérifie qu'un fichier est un dossier ? (tu pourrait utiliser os.Open() pour vérifier que le path mène bien à un fichier)
+new.go:                  => tu pourrais créé le fichier de la db avec un os.Create()
+new.go:        l16 - l18 => pourquoi faire un ping de ta db vu que tu ne fait rien avec cette session de la db ?
+new.go:        l23 - l26 => tu n'as pas besoin de faire un pragma on ici vu que la session avec ta db se ferme aussitôt
+
+migrate.go:    l35 - l38 => si tu veux ping ta db fait le avant de faire des modifications dessus (bien qu'ici vu que tu fais des migrations il serait une bonne idée de le faire avant ET après)
+migrate.go:    l44       => ta fonction n'est jamais appelé (et pourquoi vouloir détruire sa db ?)
+
+password.go:   l25 - l26 => peut être réduit en 1 ligne => return bcrypt.CompareHashAndPassword([]byte(hashesPassword), []byte(password)) == nil
+password.go:             => tes appelle à ta DB n'ont pas été mis à jour depuis que tu as commencé à utilisé l'import de Romann (ta var DB est tout le temps de type *sql.DB)
+
+user.go:       l16       => pour indiquer un type et pas une variable donc func (u *user) devient func (user *model.User)
+
+------WebKitFormBoundaryBqUSJJCxd4jWR6Zr--
