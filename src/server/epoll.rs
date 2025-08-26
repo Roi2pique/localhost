@@ -1,5 +1,8 @@
-use crate::server::connection;
-use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD};
+use crate::http::{request, router};
+// use crate::server::connection;
+use libc::{close, epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD, EPOLL_CTL_DEL};
+use std::io::Read;
+use std::net::TcpStream;
 use std::{
     collections::HashMap,
     net::TcpListener,
@@ -10,6 +13,12 @@ use std::{
 #[derive(Debug)]
 pub struct Epoll {
     epoll_fd: RawFd,
+}
+
+struct Client {
+    stream: TcpStream,
+    buffer: Vec<u8>,
+    parsed: bool,
 }
 
 impl Epoll {
@@ -27,6 +36,14 @@ impl Epoll {
         unsafe {
             epoll_ctl(self.epoll_fd, EPOLL_CTL_ADD, fd, &mut event);
         }
+    }
+
+    pub fn remove_fd(&self, fd: RawFd) {
+        let res = unsafe { epoll_ctl(self.epoll_fd, EPOLL_CTL_DEL, fd, std::ptr::null_mut()) };
+        if res < 0 {
+            eprintln!("epoll_ctl DEL failed for fd {}", fd);
+        }
+        // ❌ do not call close(fd) here!
     }
 
     pub fn wait(&self, max_events: usize) -> Vec<RawFd> {
@@ -71,7 +88,6 @@ pub fn path_server() -> String {
     }
 }
 
-// modify to accept the multiple possiblities of listeners
 pub fn run_epoll(listerners: Vec<TcpListener>) {
     let mut handler = Vec::new();
     for listener in listerners {
@@ -80,29 +96,64 @@ pub fn run_epoll(listerners: Vec<TcpListener>) {
 
             let epoll = Epoll::new();
             epoll.add_fd(listener.as_raw_fd());
-            let mut clients = HashMap::new();
+            let mut clients: HashMap<i32, Client> = HashMap::new();
 
             loop {
+                let mut to_remove = Vec::new();
+
                 for fd in epoll.wait(10) {
                     if fd == listener.as_raw_fd() {
+                        // Accept new connection
                         if let Ok((stream, _)) = listener.accept() {
                             let fd = stream.as_raw_fd();
                             stream.set_nonblocking(true).unwrap();
                             epoll.add_fd(fd);
-                            clients.insert(fd, stream);
+                            clients.insert(
+                                fd,
+                                Client {
+                                    stream,
+                                    buffer: Vec::new(),
+                                    parsed: false,
+                                },
+                            );
                         }
-                    } else if let Some(stream) = clients.remove(&fd) {
-                        connection::handle_connection(stream);
-                        // Maybe reinsert the stream if needed after handling
-                        // clients.insert(fd, stream);
+                    } else if let Some(client) = clients.get_mut(&fd) {
+                        let mut tmp = [0u8; 4096];
+                        match client.stream.read(&mut tmp) {
+                            Ok(0) => {
+                                // connection closed
+                                to_remove.push(fd);
+                            }
+                            Ok(n) => {
+                                client.buffer.extend_from_slice(&tmp[..n]);
+                                while let Some(req) =
+                                    request::parse_request_from_buffer(&mut client.buffer)
+                                {
+                                    router::route_request(req, &mut client.stream);
+                                }
+                            }
+                            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                                // just wait for next epoll event
+                            }
+                            Err(e) => {
+                                eprintln!("Error on fd {}: {}", fd, e);
+                                to_remove.push(fd);
+                            }
+                        }
                     }
+                }
+
+                // ✅ Cleanup safely
+                for fd in to_remove {
+                    epoll.remove_fd(fd); // just deregister, no close
+                    clients.remove(&fd); // TcpStream dropped -> fd closed here
                 }
             }
         });
         handler.push(handle);
     }
+
     for handle in handler {
         handle.join().unwrap();
     }
 }
-// so can i keep this func ?

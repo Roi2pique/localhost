@@ -37,9 +37,8 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
         return;
     }
     let boundary = boundary.unwrap();
-    println!("HTTPRequest {:#?}\n", req.body);
-    let body_bytes = match req.body_as_text() {
-        // modif for the bytes
+    // println!("HTTPRequest {:?}\n", req.body);
+    let body_bytes = match &req.body {
         Some(body) => body,
         None => {
             error_response(400, stream);
@@ -48,7 +47,7 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
         }
     };
 
-    match parse_multipart_form(&body_bytes, &boundary) {
+    match parse_multipart_form(body_bytes, &boundary) {
         Some((filename, file_bytes)) => {
             let is_script = filename.ends_with(".py")
                 || filename.ends_with(".sh")
@@ -101,29 +100,40 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
     }
 }
 
-// next there is the new version
-pub fn parse_multipart_form(body: &str, boundary: &str) -> Option<(String, Vec<u8>)> {
+pub fn parse_multipart_form(body: &[u8], boundary: &str) -> Option<(String, Vec<u8>)> {
     let boundary_marker = format!("--{}", boundary);
+    let boundary_bytes = boundary_marker.as_bytes();
 
-    // Split body into parts
-    let parts: Vec<&str> = body.split(&boundary_marker).collect();
+    let mut start = 0;
+    while let Some(pos) = twoway::find_bytes(&body[start..], boundary_bytes) {
+        let part_start = start + pos + boundary_bytes.len();
+        // skip leading \r\n
+        let part = &body[part_start..];
 
-    for part in parts {
-        if part.contains("Content-Disposition") && part.contains("filename=") {
-            let filename_re = Regex::new(r#"filename="([^"]+)""#).ok()?;
-            let filename = filename_re.captures(part)?.get(1)?.as_str().to_string();
+        if let Some(headers_end) = twoway::find_bytes(part, b"\r\n\r\n") {
+            let (headers_raw, content_raw) = part.split_at(headers_end);
+            let headers_str = String::from_utf8_lossy(headers_raw);
 
-            let split = part.split("\r\n\r\n").collect::<Vec<_>>();
-            if split.len() < 2 {
-                continue; // malformed part
+            if headers_str.contains("filename=") {
+                let filename_re = Regex::new(r#"filename="([^"]+)""#).ok()?;
+                let filename = filename_re
+                    .captures(&headers_str)?
+                    .get(1)?
+                    .as_str()
+                    .to_string();
+
+                // skip \r\n\r\n
+                let mut content = content_raw[4..].to_vec();
+
+                // trim trailing CRLF
+                while content.ends_with(&[b'\r', b'\n']) {
+                    content.truncate(content.len().saturating_sub(2));
+                }
+
+                return Some((filename, content));
             }
-
-            let content_part = split[1];
-            // Remove potential trailing line breaks / boundary indicators
-            let content = content_part.trim_end_matches("\r\n").trim_end();
-
-            return Some((filename, content.as_bytes().to_vec()));
         }
+        start = part_start;
     }
 
     None

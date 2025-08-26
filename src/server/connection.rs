@@ -1,3 +1,4 @@
+/*
 use crate::errors::handler::error_response;
 use crate::http::request::parse_request;
 use crate::http::session::{build_set_cookie_header, parse_cookie_header, SESSION_STORE};
@@ -35,3 +36,4 @@ pub fn handle_connection(mut stream: TcpStream) {
 //     });
 // request.headers.insert("X-Session-ID".into(), session_id);
 // println!("method: {} for path: {}", request.method, request.path);
+*/
