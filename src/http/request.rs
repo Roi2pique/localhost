@@ -4,10 +4,14 @@ use std::collections::HashMap;
 pub struct HttpRequest {
     pub method: String,
     pub path: String,
-    pub version: String,
+    pub _version: String,
     pub headers: HashMap<String, String>,
     pub body: Option<Vec<u8>>,     // ✅ raw bytes, always present
     pub text_body: Option<String>, // ✅ only for text-based requests
+
+    // new fields
+    pub extra_response_headers: Vec<String>,
+    pub session_id: Option<String>,
 }
 
 // impl HttpRequest {
@@ -37,7 +41,7 @@ pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
         let mut parts = request_line.split_whitespace();
         let method = parts.next()?.to_string();
         let path = parts.next()?.to_string();
-        let version = parts.next()?.to_string();
+        let _version = parts.next()?.to_string();
 
         let mut headers = HashMap::new();
         for line in lines {
@@ -67,10 +71,12 @@ pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
         return Some(HttpRequest {
             method,
             path,
-            version,
+            _version,
             headers,
             body: Some(body),
             text_body,
+            extra_response_headers: Vec::new(),
+            session_id: None,
         });
     }
 

@@ -1,4 +1,5 @@
 use crate::http::{request, router};
+use crate::server::handle_session;
 use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLIN, EPOLL_CTL_ADD, EPOLL_CTL_DEL};
 use std::io::Read;
 use std::net::TcpStream;
@@ -17,7 +18,7 @@ pub struct Epoll {
 struct Client {
     stream: TcpStream,
     buffer: Vec<u8>,
-    // parsed: bool,
+    _parsed: bool,
 }
 
 impl Epoll {
@@ -112,7 +113,7 @@ pub fn run_epoll(listerners: Vec<TcpListener>) {
                                 Client {
                                     stream,
                                     buffer: Vec::new(),
-                                    // parsed: false,
+                                    _parsed: false,
                                 },
                             );
                         }
@@ -125,9 +126,11 @@ pub fn run_epoll(listerners: Vec<TcpListener>) {
                             }
                             Ok(n) => {
                                 client.buffer.extend_from_slice(&tmp[..n]);
-                                while let Some(req) =
+                                while let Some(mut req) =
                                     request::parse_request_from_buffer(&mut client.buffer)
                                 {
+                                    handle_session::handle_session(&mut req, &mut client.stream);
+                                    println!("Request from struct: \n{:#?}", req);
                                     router::route_request(req, &mut client.stream);
                                 }
                             }
