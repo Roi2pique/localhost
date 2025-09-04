@@ -67,7 +67,7 @@ pub fn generate_session_id() -> String {
 
 pub fn build_set_cookie_header(session_id: &str) -> String {
     format!(
-        "Set-Cookie: session_id={}; HttpOnly; Path=/; Secure; Max-Age=3600",
+        "Set-Cookie: session_id={}; HttpOnly; Path=/; Max-Age=3600", // not secure cause of HTTP (not HTTPS)
         session_id
     )
 }
