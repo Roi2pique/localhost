@@ -1,11 +1,11 @@
+use log::{error, info};
 use std::net::TcpListener;
 use std::process::exit;
-use log::{info, error};
 
 pub struct ListenerInfo {
     pub listener: TcpListener,
-    pub domain: Option<String>,
-    pub address: String, // Useful for debugging/logging
+    pub _domain: Option<String>,
+    pub _address: String, // Useful for debugging/logging
 }
 
 pub fn init_listeners(configs: Vec<(String, u16, String)>) -> Vec<ListenerInfo> {
@@ -16,19 +16,22 @@ pub fn init_listeners(configs: Vec<(String, u16, String)>) -> Vec<ListenerInfo> 
 
         match TcpListener::bind(&addr) {
             Ok(listener) => {
-                if domain_name.is_empty() { 
+                if domain_name.is_empty() {
                     info!("Listening on http://{}", addr);
                     listeners.push(ListenerInfo {
                         listener,
-                        domain: None,
-                        address: addr,
+                        _domain: None,
+                        _address: addr,
                     });
                 } else {
-                    info!("Listening on http://{} for domain 'http://{}:{}'", addr, domain_name, port);
+                    info!(
+                        "Listening on http://{} for domain 'http://{}:{}'",
+                        addr, domain_name, port
+                    );
                     listeners.push(ListenerInfo {
                         listener,
-                        domain: Some(domain_name),
-                        address: addr,
+                        _domain: Some(domain_name),
+                        _address: addr,
                     });
                 }
             }
