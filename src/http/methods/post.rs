@@ -3,6 +3,7 @@ use regex::Regex;
 use std::fs::File;
 use std::{io::Write, net::TcpStream};
 
+use crate::http::response::create_response;
 use crate::{
     errors::handler::error_response,
     http::request::HttpRequest,
@@ -82,13 +83,11 @@ pub fn handle_upload(req: &HttpRequest, stream: &mut TcpStream) {
                 <a href= \"/\"><button> Home</button></a>",
                 filename
             );
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{}",
-                html.len(),
-                html
-            );
+
+            let response = create_response("200 OK", html, "text/html", None);
+
+            response.send(stream, req);
             println!("the filename : {:?}", filename);
-            let _ = stream.write_all(response.as_bytes());
         }
         None => {
             error_response(400, stream);

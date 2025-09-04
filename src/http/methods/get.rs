@@ -1,11 +1,13 @@
 use crate::errors::handler::error_response;
+use crate::http::request::HttpRequest;
 use crate::http::response::create_response;
 use crate::http::utils;
 use std::path::Path;
 use std::{fs, net::TcpStream};
 
 // Handle GET request
-pub fn handle_get(path: &str, stream: &mut TcpStream) {
+pub fn handle_get(req: &HttpRequest, stream: &mut TcpStream) {
+    let path = req.path.as_str();
     let base_dir = Path::new("./ressources");
     let src = Path::new("./src");
 
@@ -31,7 +33,7 @@ pub fn handle_get(path: &str, stream: &mut TcpStream) {
         ) {
             Some(content) => {
                 let response = create_response("200 OK", content.into_bytes(), "text/html", None);
-                response.send(stream);
+                response.send(stream, &req);
             }
             None => {
                 error_response(500, stream); // couldn't read or build template
@@ -43,18 +45,18 @@ pub fn handle_get(path: &str, stream: &mut TcpStream) {
         let default = fs_path.join("index.html");
 
         if default.exists() {
-            send_file(default, stream);
+            send_file(default, stream, req);
         } else {
             error_response(404, stream);
         }
     } else if fs_path.exists() {
-        send_file(fs_path.to_path_buf(), stream);
+        send_file(fs_path.to_path_buf(), stream, req);
     } else {
         error_response(404, stream);
     }
 }
 
-fn send_file(path: std::path::PathBuf, stream: &mut TcpStream) {
+fn send_file(path: std::path::PathBuf, stream: &mut TcpStream, req: &HttpRequest) {
     match fs::read(&path) {
         Ok(content) => {
             let content_type = match path.extension().and_then(|s| s.to_str()) {
@@ -68,7 +70,7 @@ fn send_file(path: std::path::PathBuf, stream: &mut TcpStream) {
             };
 
             let response = create_response("200 OK", content, content_type, None);
-            response.send(stream);
+            response.send(stream, &req);
         }
         Err(_) => {
             println!("error : sendfile");

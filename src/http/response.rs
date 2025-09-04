@@ -1,3 +1,4 @@
+use crate::http::request::HttpRequest;
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::TcpStream;
@@ -6,11 +7,26 @@ use std::net::TcpStream;
 pub struct HttpResponse {
     pub headers: String,
     pub body: Vec<u8>,
+    pub extra_headers: Vec<String>,
 }
 
 impl HttpResponse {
-    pub fn send(&self, stream: &mut TcpStream) {
-        let _ = stream.write_all(self.headers.as_bytes());
+    pub fn send(&self, stream: &mut TcpStream, req: &HttpRequest) {
+        let mut headers = self.headers.clone();
+
+        // Inject extra headers from middleware (sessions etc.)
+        for h in &req.extra_response_headers {
+            headers.push_str(h);
+            headers.push_str("\r\n");
+        }
+
+        // Also include response-specific extra headers (if any)
+        for h in &self.extra_headers {
+            headers.push_str(h);
+            headers.push_str("\r\n");
+        }
+
+        let _ = stream.write_all(headers.as_bytes());
         let _ = stream.write_all(&self.body);
     }
 }
@@ -38,5 +54,9 @@ pub fn create_response(
 
     headers.push_str("\r\n");
 
-    HttpResponse { headers, body }
+    HttpResponse {
+        headers,
+        body,
+        extra_headers: Vec::new(),
+    }
 }
