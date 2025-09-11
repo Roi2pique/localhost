@@ -1,4 +1,5 @@
 use crate::http::request::HttpRequest;
+use log::error;
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::TcpStream;
@@ -26,8 +27,15 @@ impl HttpResponse {
             headers.push_str("\r\n");
         }
 
-        let _ = stream.write_all(headers.as_bytes());
-        let _ = stream.write_all(&self.body);
+        headers.push_str("\r\n");
+
+        if let Err(e) = stream.write_all(headers.as_bytes()) {
+            error!("write failed (headers) : {}", e);
+            return;
+        };
+        if let Err(e) = stream.write_all(&self.body) {
+            error!("write failed (body) : {}", e)
+        };
     }
 }
 
@@ -51,8 +59,6 @@ pub fn create_response(
             headers.push_str(&format!("{}: {}\r\n", key, value));
         }
     }
-
-    headers.push_str("\r\n");
 
     HttpResponse {
         headers,

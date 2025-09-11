@@ -1,7 +1,8 @@
 // Launches and communicates with CGI scripts
-
 use crate::errors::handler::error_response;
 use crate::http::request::HttpRequest;
+use crate::http::response::create_response;
+use log::error;
 use std::io::Write;
 use std::net::TcpStream;
 use std::process::{Command, Stdio};
@@ -52,7 +53,11 @@ pub fn handle_cgi(req: &HttpRequest, stream: &mut TcpStream) {
 
     // Write body to stdin of CGI
     if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(body.as_bytes());
+        if let Err(e) = stdin.write_all(body.as_bytes()) {
+            error!("Failed to send body to CGI stdin: {}", e);
+            error_response(500, stream);
+            return;
+        }
     }
 
     let output = match child.wait_with_output() {
@@ -64,13 +69,10 @@ pub fn handle_cgi(req: &HttpRequest, stream: &mut TcpStream) {
         }
     };
 
-    let response = String::from_utf8_lossy(&output.stdout);
-    let full_response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-        response.len(),
-        response
-    );
-    let _ = stream.write_all(full_response.as_bytes());
+    let response = format!("<pre>{}</pre>", String::from_utf8_lossy(&output.stdout));
+    let nresp = create_response("200", response, "text/html", None);
+
+    nresp.send(stream, req);
 }
 
 fn get_interpreter(path: &str) -> Option<&str> {
