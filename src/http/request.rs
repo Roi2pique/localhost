@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use urlencoding::decode;
 
 #[derive(Debug)]
 pub struct HttpRequest {
@@ -26,6 +27,9 @@ pub struct HttpRequest {
 //     }
 // }
 
+// add this : if content_length > 10 * 1024 * 1024 { return None; } →
+// refuse anything larger than 10MB.
+// Then return 413 Payload Too Large.
 pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
     if let Some(pos) = twoway::find_bytes(buffer, b"\r\n\r\n") {
         let headers_part = &buffer[..pos];
@@ -42,6 +46,11 @@ pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
         let method = parts.next()?.to_string();
         let path = parts.next()?.to_string();
         let _version = parts.next()?.to_string();
+
+        let updated_path = match decode(&path) {
+            Ok(p) => p.to_string(),
+            Err(_) => path,
+        };
 
         let mut headers = HashMap::new();
         for line in lines {
@@ -70,7 +79,7 @@ pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
 
         return Some(HttpRequest {
             method,
-            path,
+            path: updated_path,
             _version,
             headers,
             body: Some(body),
