@@ -10,7 +10,7 @@ pub static SESSION_STORE: Lazy<Arc<Mutex<SessionStore>>> =
 
 #[derive(Debug)]
 pub struct SessionData {
-    pub created_at: OffsetDateTime,
+    pub _created_at: OffsetDateTime,
     pub last_seen: OffsetDateTime,
     // Optionally:
     // pub visit_count: u32,
@@ -33,7 +33,7 @@ impl SessionStore {
         let session_id = generate_session_id();
         let now = OffsetDateTime::now_utc();
         let data = SessionData {
-            created_at: now,
+            _created_at: now,
             last_seen: now,
         };
         self.sessions.insert(session_id.clone(), data);

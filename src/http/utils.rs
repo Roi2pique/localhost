@@ -1,5 +1,4 @@
 use std::fs;
-// use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 
 pub fn sanitize_path(request_path: &str, base_dir: &Path) -> Option<PathBuf> {
@@ -33,7 +32,6 @@ pub fn sanitize_path(request_path: &str, base_dir: &Path) -> Option<PathBuf> {
 pub fn generate_file_list_html(dir: &Path, web_prefix: &str) -> String {
     let mut html = String::from("<ul>");
 
-    // println!("[DEBUG] Adding file: {:?} -> {}", dir, web_prefix);
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let file_name = entry.file_name().to_string_lossy().to_string();
@@ -44,7 +42,7 @@ pub fn generate_file_list_html(dir: &Path, web_prefix: &str) -> String {
             ));
         }
     }
-    // println!("[DEBUG] Generated HTML: {}", html);
+
     html.push_str("</ul>");
     html
 }
