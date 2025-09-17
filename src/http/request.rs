@@ -15,17 +15,20 @@ pub struct HttpRequest {
     pub session_id: Option<String>,
 }
 
-// impl HttpRequest {
-//     pub fn body_as_text(&self) -> Option<String> {
-//         if let Some(text) = &self.text_body {
-//             Some(text.clone())
-//         } else if let Some(bytes) = &self.body {
-//             Some(String::from_utf8_lossy(bytes).to_string())
-//         } else {
-//             None
-//         }
-//     }
-// }
+impl HttpRequest {
+    pub fn new() -> Self {
+        HttpRequest {
+            method: String::new(),
+            path: String::new(),
+            _version: String::new(),
+            headers: HashMap::new(),
+            body: None,
+            text_body: None,
+            extra_response_headers: Vec::new(),
+            session_id: None,
+        }
+    }
+}
 
 // add this : if content_length > 10 * 1024 * 1024 { return None; } →
 // refuse anything larger than 10MB.

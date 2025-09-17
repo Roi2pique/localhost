@@ -1,9 +1,11 @@
-use crate::http::response::create_response;
-use std::{io::Write, net::TcpStream};
+use crate::http::{request::HttpRequest, response::create_response};
+use std::net::TcpStream;
 
 // Generates 404, 403, etc.
-pub fn error_response(code: u16, client: &mut TcpStream) {
+pub fn error_response(code: u16, stream: &mut TcpStream) {
     println!("Error: {}", code);
+    let new = HttpRequest::new();
+
     let resp = match code {
         400 => create_response(
             "400 Bad Request",
@@ -48,7 +50,8 @@ pub fn error_response(code: u16, client: &mut TcpStream) {
             None,
         ),
     };
-    if let Err(e) = client.write(resp.headers.as_bytes()) {
-        eprintln!("500 Internal error server: {}", e);
-    }
+    let mut body = resp.body.clone();
+    body.extend_from_slice(b"<a href=\"/\"><button> Home</button></a>");
+    let resp = create_response("200 OK", body, "text/html", None);
+    resp.send(stream, &new);
 }
