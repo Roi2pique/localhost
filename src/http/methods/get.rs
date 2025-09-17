@@ -44,12 +44,18 @@ pub fn handle_get(req: &HttpRequest, stream: &mut TcpStream) {
     if fs_path.is_dir() {
         let default = fs_path.join("index.html");
 
-        if default.exists() {
+        if default
+            .try_exists()
+            .expect("Can't check existence of file 1")
+        {
             send_file(default, stream, req);
         } else {
             error_response(404, stream);
         }
-    } else if fs_path.exists() {
+    } else if fs_path
+        .try_exists()
+        .expect("Can't check existence of file 2")
+    {
         send_file(fs_path.to_path_buf(), stream, req);
     } else {
         error_response(404, stream);

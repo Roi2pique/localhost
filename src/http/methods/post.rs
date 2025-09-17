@@ -110,7 +110,7 @@ pub fn parse_multipart_form(body: &[u8], boundary: &str) -> Option<(String, Vec<
         let part = &body[part_start..];
 
         if let Some(headers_end) = twoway::find_bytes(part, b"\r\n\r\n") {
-            let (headers_raw, content_raw) = part.split_at(headers_end);
+            let (headers_raw, _) = part.split_at(headers_end);
             let headers_str = String::from_utf8_lossy(headers_raw);
 
             if headers_str.contains("filename=") {
@@ -121,12 +121,19 @@ pub fn parse_multipart_form(body: &[u8], boundary: &str) -> Option<(String, Vec<
                     .as_str()
                     .to_string();
 
-                // skip \r\n\r\n
-                let mut content = content_raw[4..].to_vec();
+                // file content starts after \r\n\r\n
+                let file_start = headers_end + 4;
+                let after_headers = &part[file_start..];
 
-                // trim trailing CRLF
+                // look for the *next boundary* to know where the file ends
+                let file_end = twoway::find_bytes(after_headers, boundary_bytes)
+                    .unwrap_or(after_headers.len());
+
+                let mut content = after_headers[..file_end].to_vec();
+
+                // trim trailing CRLF (common before the boundary)
                 while content.ends_with(&[b'\r', b'\n']) {
-                    content.truncate(content.len().saturating_sub(2));
+                    content.truncate(content.len().saturating_sub(1));
                 }
 
                 return Some((filename, content));

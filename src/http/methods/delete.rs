@@ -17,7 +17,10 @@ pub fn handle_delete(req: &HttpRequest, stream: &mut TcpStream) {
             return;
         }
     };
-    if !Path::new(&sanitized).exists() {
+    if !Path::new(&sanitized)
+        .try_exists()
+        .expect("Can't check existence of file delete")
+    {
         error_response(404, stream);
         return;
     }
