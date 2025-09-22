@@ -8,9 +8,17 @@ use std::net::TcpStream;
 use std::path::Path;
 
 pub fn handle_delete(req: &HttpRequest, stream: &mut TcpStream) {
-    let base_dir = Path::new("./ressources");
+    let filename = req.path.split('/').last().unwrap_or("");
+    let is_script =
+        filename.ends_with(".py") || filename.ends_with(".sh") || filename.ends_with(".cgi");
 
-    let sanitized = match sanitize_path(&req.path, base_dir) {
+    let base_dir = if is_script {
+        Path::new("./src/cgi_bin/scripts")
+    } else {
+        Path::new("./ressources/upload")
+    };
+
+    let sanitized = match sanitize_path(filename, base_dir) {
         Some(p) => p,
         None => {
             error_response(403, stream);
@@ -40,9 +48,3 @@ pub fn handle_delete(req: &HttpRequest, stream: &mut TcpStream) {
         }
     }
 }
-/* modify for path if is a script
-let is_script = filename.ends_with(".py")
-                || filename.ends_with(".sh")
-                || filename.ends_with(".cgi");
-
-     */

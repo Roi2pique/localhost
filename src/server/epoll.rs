@@ -130,7 +130,7 @@ pub fn run_epoll(listerners: Vec<TcpListener>) {
                                     request::parse_request_from_buffer(&mut client.buffer)
                                 {
                                     handle_session::handle_session(&mut req, &mut client.stream);
-                                    println!("Request from struct: \n{:#?}", req);
+                                    // println!("Request from struct: \n{:#?}", req);
                                     router::route_request(req, &mut client.stream);
                                 }
                             }
