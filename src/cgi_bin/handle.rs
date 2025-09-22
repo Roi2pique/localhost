@@ -69,7 +69,11 @@ pub fn handle_cgi(req: &HttpRequest, stream: &mut TcpStream) {
         }
     };
 
-    let response = format!("<pre>{}</pre>", String::from_utf8_lossy(&output.stdout));
+    let response = format!(
+        "<pre>{}</pre>
+    <a href= \"/\"><button> Home</button></a>",
+        String::from_utf8_lossy(&output.stdout)
+    );
     let nresp = create_response("200", response, "text/html", None);
 
     nresp.send(stream, req);

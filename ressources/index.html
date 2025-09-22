@@ -35,12 +35,27 @@
     <form onsubmit="event.preventDefault(); 
         const filename = this.filename.value;
         fetch(`/upload/${filename}`, { method: 'DELETE' })
-            .then(() => alert('Deleted'))
+            .then(response => {
+                if (response.ok) {
+                    // Store a flag before reloading
+                    sessionStorage.setItem('deleted', 'true');
+                    window.location.reload();
+                } else {
+                    alert('Error deleting file: ' + response.status);
+                }
+            })
             .catch(err => alert('Error: ' + err));
     ">
         <input type="text" name="filename" placeholder="e.g. file.txt" required />
         <button type="submit">Delete</button>
     </form>
+    <script>
+        // Check if a file was deleted
+        if (sessionStorage.getItem('deleted') === 'true') {
+            alert('File deleted successfully');
+            sessionStorage.removeItem('deleted'); // Clear the flag
+        }
+    </script>
 
     <h2>Browse Uploaded Files Or Script</h2>
     <div id="file-list">
