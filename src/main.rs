@@ -5,15 +5,17 @@ mod http;
 mod server;
 
 use crate::config::loader::PATH_SERVER;
+use crate::server::epoll::run_epoll;
 use config::loader::config_output;
 use env_logger;
 use log::info;
-use server::epoll::run_epoll;
+use server::host::update_hosts;
 use server::listener::{init_listeners, ListenerInfo};
 
 fn main() {
     env_logger::init();
     info!("Starting server...");
+    update_hosts();
 
     let config_path = format!("{}/etc/config.txt", *PATH_SERVER);
     let configs = config_output(config_path.as_str());
@@ -26,5 +28,3 @@ fn main() {
 
     run_epoll(tcp_listeners);
 }
-
-//fn exec_sudo() {}
