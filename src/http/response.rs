@@ -1,3 +1,4 @@
+use crate::errors::handler::error_response;
 use crate::http::request::HttpRequest;
 use log::error;
 use std::collections::HashMap;
@@ -31,6 +32,7 @@ impl HttpResponse {
 
         if let Err(e) = stream.write_all(headers.as_bytes()) {
             error!("write failed (headers) : {}", e);
+            error_response(413, stream);
             return;
         };
         if let Err(e) = stream.write_all(&self.body) {

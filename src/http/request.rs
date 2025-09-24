@@ -1,4 +1,6 @@
+use crate::errors::handler::error_response;
 use std::collections::HashMap;
+use std::net::TcpStream;
 use urlencoding::decode;
 
 #[derive(Debug)]
@@ -30,10 +32,10 @@ impl HttpRequest {
     }
 }
 
-// add this : if content_length > 10 * 1024 * 1024 { return None; } →
-// refuse anything larger than 10MB.
-// Then return 413 Payload Too Large.
-pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
+pub fn parse_request_from_buffer(
+    buffer: &mut Vec<u8>,
+    stream: &mut TcpStream,
+) -> Option<HttpRequest> {
     if let Some(pos) = twoway::find_bytes(buffer, b"\r\n\r\n") {
         let headers_part = &buffer[..pos];
         let body_start = pos + 4;
@@ -66,6 +68,12 @@ pub fn parse_request_from_buffer(buffer: &mut Vec<u8>) -> Option<HttpRequest> {
             .get("Content-Length")
             .and_then(|cl| cl.parse::<usize>().ok())
             .unwrap_or(0);
+
+        // refuse anything larger than 10MB.
+        if content_length > 10 * 1024 * 1024 || buffer.len() > 10 * 1024 * 1024 {
+            error_response(413, stream);
+            return None;
+        }
 
         if buffer.len() < body_start + content_length {
             return None;
