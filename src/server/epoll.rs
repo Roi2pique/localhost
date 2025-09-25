@@ -119,6 +119,10 @@ pub fn run_epoll(listerners: Vec<TcpListener>) {
                         }
                     } else if let Some(client) = clients.get_mut(&fd) {
                         let mut tmp = [0u8; 4096];
+                        // check size for buffer overflow
+                        if client.buffer.len() > 10 * 1024 * 1024 {
+                            to_remove.push(fd);
+                        }
                         match client.stream.read(&mut tmp) {
                             Ok(0) => {
                                 // connection closed

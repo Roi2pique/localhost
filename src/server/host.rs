@@ -53,20 +53,3 @@ pub fn update_hosts() {
         }
     }
 }
-
-// pub fn update_hosts() {
-//     let output = Command::new("sudo")
-//         .arg("ressources/update_hosts.sh")
-//         .output()
-//         .expect("failed to execute process");
-
-//     let stdout = String::from_utf8_lossy(&output.stdout);
-//     // println!("Script output: {}", String::from_utf8_lossy(&output.stderr));
-//     match stdout.trim() {
-//         "ALREADY_OK" => println!("Hosts file already contains the correct mapping"),
-//         // "WRONG_IP" => println!("Hosts file had wrong IP, replaced it"),
-//         "UPDATED" => println!("Hosts file updated successfully"),
-//         "FAILED" => eprintln!("Failed to update hosts file"),
-//         other => eprintln!("Unknown script output: {}", other),
-//     }
-// }

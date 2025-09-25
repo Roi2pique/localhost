@@ -1,4 +1,4 @@
-use crate::errors::handler::error_response;
+use crate::http::response::create_response;
 use std::collections::HashMap;
 use std::net::TcpStream;
 use urlencoding::decode;
@@ -23,6 +23,18 @@ impl HttpRequest {
             method: String::new(),
             path: String::new(),
             _version: String::new(),
+            headers: HashMap::new(),
+            body: None,
+            text_body: None,
+            extra_response_headers: Vec::new(),
+            session_id: None,
+        }
+    }
+    pub fn empty() -> Self {
+        HttpRequest {
+            method: "".into(),
+            path: "".into(),
+            _version: "".into(),
             headers: HashMap::new(),
             body: None,
             text_body: None,
@@ -71,7 +83,14 @@ pub fn parse_request_from_buffer(
 
         // refuse anything larger than 10MB.
         if content_length > 10 * 1024 * 1024 || buffer.len() > 10 * 1024 * 1024 {
-            error_response(413, stream);
+            let resp = create_response(
+                "413 Payload Too Large",
+                "<h1>413 Payload Too Large</h1>
+                <a href=\"/\"><button> Home</button></a>",
+                "text/html",
+                None,
+            );
+            resp.send(stream, &HttpRequest::empty());
             return None;
         }
 

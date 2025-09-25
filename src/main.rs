@@ -15,11 +15,11 @@ use server::listener::{init_listeners, ListenerInfo};
 fn main() {
     env_logger::init();
     info!("Starting server...");
-    update_hosts();
+    update_hosts(); //update the function host about config file change for multi domain support
 
     let config_path = format!("{}/etc/config.txt", *PATH_SERVER);
     let configs = config_output(config_path.as_str());
-
+    println!("config : {:#?}", configs);
     let listener_infos: Vec<ListenerInfo> = init_listeners(configs);
     let tcp_listeners = listener_infos
         .iter()
